@@ -1,0 +1,4 @@
+The programmes in this directory drive various supervised
+learning classifiers on input training and validation 
+datasets.  See run_all.ksh for more details.
+
