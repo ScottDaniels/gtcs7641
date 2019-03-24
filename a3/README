@@ -1,0 +1,67 @@
+Gerogia Tech cs7641 Assignment 3
+Spring 2019
+
+Author: Edward Scott Daniels  
+
+Code is available as a gzipped tar file in the directory
+on google drive:
+https://drive.google.com/open?id=183qevl6vvQIb1Vkb7Dw3lucefMaCU7Lz
+
+As an alternate/backup, the code will also be posted on 
+github in the a3 directory in this repo:
+https://github.com/ScottDaniels/gtcs7641
+
+
+
+
+Requirements and running the code for this assignment:
+
+The code requires:
+	python3
+	sklearn
+	numpy
+	scipy
+	bash
+
+
+Assuming the code has been downloaded as a .tgz file from the source,
+and unpacked into the current directory where such that bin and data
+subdirectories exist, then the following commands should be used to 
+run the code:
+
+# run for adult data
+./bin/run k adult		# k-means clustering
+./bin/run e adult		# Em clustering
+./bin/run d adult		# dimsion reduction 
+./bin/run a adult		# ann on dimensionally reduced data
+./bin/run c adult		# ann on data with cluster (combined data )
+
+# run for crowd data
+./bin/run k crowd		# k-means clustering
+./bin/run e crowd		# Em clustering
+./bin/run d crowd		# dimsion reduction 
+./bin/run a crowd		# ann on dimensionally reduced data
+./bin/run c crowd		# ann on data with cluster (combined data )
+
+Stats are written to standard error. If the code generates plot 
+output (.eps) files they are written to /tmp.
+
+Add -d directory-name to any command (before the first parameter)
+to write plot output to a different directory. Not all commands
+generate plot output.
+
+
+For more details, the bin/run script can be consulted, but you really
+should not need to.  Example output:
+
+%% [/data]bin/run e adult
+#em.py    -k 2 -i 3 /data/data/adult/adult_train.csv /data/data/adult/adult_test.csv
+data: 48844 instances  10 parameters
+#ACC   HOMO  COMPL VM    ARAND MI    CH-idx
+  0.770  0.002  0.002  0.002 -0.025  0.002 4024.595
+  0.230  0.002  0.002  0.002 -0.025  0.002 4024.595
+  0.770  0.002  0.002  0.002 -0.025  0.002 4024.595
+
+
+
+Thank you!

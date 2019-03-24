@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# should use ksh, but likely not installed by default, so bash will do
+
+#	Mnemonic:	run
+#	Abstract:	Drive various programmes for unsupervised learning experiments
+#
+#				General usage:  
+#					run [-d out-dir] [-i iterations] [-k best-k] <eval-type> [data-type]
+#
+#					where:
+#						eval-type is one of:
+#							a - reduced data sets through ANN
+#							c - combined cluster/data ANN evaluation
+#							e - EM clustering
+#							k - k-means clustering
+#							r - dimsion reduction
+#
+#                       data-type is either adult or crowd
+#
+#                   If best k is not supplied, a variable number of tests with
+#                   a predetermined range of values for k will be executed.
+#
+#					Statistics/results are written to stdout. the -d out-dir
+#					is the directory used for writing plot (.eps) files and
+#					defaults to /tmp if not supplied. The directory MUST exist
+#					if -d is given.
+#							
+#	Date:		9 March 2019
+#	Author:		Edward Scott Daniels  edaniels7@gatech.edu
+#
+#------------------------------------------------------------------------------
+
+# check to ensure that $1 is a directory; fail if not
+function ensure {
+	if [[ ! -d $1 ]]
+	then
+		echo "[FAIL] cannot find required directory: $1"
+		exit 1
+	fi
+}
+
+if [[ -d ./data ]]
+then
+	data_d=$PWD/data	# installed from submitted tar
+else
+	data_d=$PED/../data		# in my container
+fi
+
+PATH=.:./bin:$PATH
+export PYTHONPATH=.:$PWD/bin:$PYTHONPATH
+
+if [[ -d ./bin ]]		# switch to bin since python doesn't seem to use PYTHONPATH for module given on command line
+then
+	cd bin
+fi
+
+adult_train=$data_d/adult/adult_train.csv 
+adult_test=$data_d/adult/adult_test.csv
+
+crowd_train=$data_d/crowd/crowd_train.csv 
+crowd_test=$data_d/crowd/crowd_test.csv
+
+iterations=3
+best_k=""       # run for a range unless -k given
+
+
+
+a_components="2 3 4 5 6 7 8 9 "
+
+while [[ $1 == -* ]]
+do
+	case $1 in 
+		-d)	ensure $2; out_dir="-d $2"; shift;;
+		-i)	iterations=$2; shift;;
+		-k) best_k=$2; shift;;			# best k value for reduced dim
+
+		*)	echo "unknown option: $1"
+			exit 1
+			;;
+	esac
+
+	shift
+done
+
+dim_set="2 3 4 5 6 7 8 9"       # default number of features to reduce to
+what=${1:-k}
+data=${2:-adult}
+cfirst=""                   # if empty, classification value is assumed in last col; set to -f when classifier is in first col
+
+case $data in
+	c*)	test=$crowd_test
+		train=$crowd_train
+        samp_rate="-s 20"
+		dim_set="2 3 5 7 9 10 13 16 19 20 21 22"       # default number of features to reduce to
+		a_components="2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23"
+        cfirst="-f"             # classification value is in first col for crowd data, so turn this on
+		;;
+
+	rev) train=$crowd_test		# reverse crowd -- crowd is noisy, so what happens with test?
+		test=$crowd_train
+        samp_rate="-s 40"
+        cfirst="-f"             # classification value is in first col for crowd data, so turn this on
+		;;
+
+	*)	test=$adult_test
+		train=$adult_train
+		;;
+esac
+
+case $what in 
+    a*)
+        set -e
+		for c in $a_components
+		do
+            echo "# python3 $bin/dimann.py $cfirst -c $c  $train $test"
+            python3 dimann.py $cfirst -c $c  $train $test
+		done
+		;;
+
+	c*)			# combine cluster with data and run through ann
+		set -e
+		for k in 2 3 4 5 6 7 8 9 10
+		do
+			echo "#python3 combann.py   -k $k  $train"
+			python3 combann.py   -k $k  $train
+		done
+		;;
+
+    e*)
+        set -e
+		for k in 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19  20
+		do
+			echo "#em.py  $cfirst $samp_rate -k $k -i $iterations $train $test"
+			python3 em.py  $cfirst $samp_rate -k $k -i $iterations $train $test
+		done
+		;;
+
+	k*)
+        set -e
+		#for k in 2 3 4 5 6 7 8 9 
+		for k in 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19  20
+		do
+			echo "#kclust.py  $cfirst $samp_rate -k $k -i $iterations $train $test"
+			python3 kclust.py  $cfirst $samp_rate -k $k -i $iterations $train $test
+		done
+		;;
+
+	r*|d*|red*|dimred)
+			set -e
+	    	#for dims in 2 3 4 5 6 7 8 9       # number of features to reduce to
+	    	for dims in $dim_set
+			do
+				echo "#dimred.py $cfirst -c $dims -k $best_k -i 1 $train $test"
+				python3 dimred.py $cfirst -c $dims  $best_k -i 1 $train $test
+			done
+		;;
+
+	*)	echo "unknown: $what"
+		exit 1
+esac
