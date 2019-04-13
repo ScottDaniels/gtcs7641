@@ -1,0 +1,91 @@
+
+
+Author:	Edward Scott Daniels
+Date:	12 April 2019
+Class:	CS 7641 Assignment 4 -- Spring 2019
+
+
+All Markov Decision Process code can be executed a single Java 'binary.'
+
+Language and Dependencies:
+	The code is written in java and was compiled and tested in a java 1.8
+environment. It depends on a single burlap jar file which is available
+here; https://jar-download.com/artifacts/edu.brown.cs.burlap/burlap (and
+possibly other places).
+
+
+Build:
+	No IDE is needed; place the jar file in the current directory and
+	build my code (Corn_maze) with the following commands:
+
+	export CLASSPAtH=.:$PWD/burlap-3.0.1-jar-with-dependencies.jar
+	javac Corn_maze.java
+
+
+Validate with:
+	java Corn_maze.java -?
+
+Which should geneate a usage message like;
+/data $ java Corn_maze -?
+usage: java -cp <classpath> [-d] [-e epsilon] [-E exp-type] [-g gamma] [-i iters] [-P] [-s] [-V] Corn_maze [{easy|city|factory}]
+        -d  - causes some map info to be dumpped to stderr (useful for plotting)
+        -E  - qlearn exploration technique; one of: boltz, egreedy, greedyq
+        -I  - show the universe interactively and do not run expriments
+        -P  - run the policy iteration experiment
+        -s  - show the resulting policy and value maps after experiments
+        -Q  - run the q-learner experiment
+        -V  - run the value iteration experiment
+
+
+The final command line argument is the world (easy, city, factory) to run
+experiments on.  City and Factory worlds were used for my write up.
+
+Sample commands:
+
+Run q-learning with boltzmann exploration and a gamma value of .99 for 5000
+iterations, 50 time. (the third 500 in that tripple is ignored for q-learning)
+java Corn_maze -d -E boltz -Q  -g .99  -i 5000,50,500 city >/tmp/data.cm 2>&1
+
+
+Run policy iteration  on the factory world
+java Corn_maze -s -d -P  -g .99  -i 5000,500,500 factory >/tmp/data.cm 2>&1
+
+Run value iteration  on the city world
+java Corn_maze -s -d -V  -g .99  -i 5000,500,500 city >/tmp/data.cm 2>&1
+
+
+If -d is given, then world plot data and final path (q-learning only) is
+written to stderr.  The burlap code (annoingly) writes garbage to stdout
+so all Corn_maze useful data is written to stderr and generally I redirect
+stdout to /dev/null.  The examples capture both, so be warned.
+
+If the -s option is given, an X-display must be present; won't likely work
+from in a container.  Drop the -s and analysis will be done without attempting
+to show the policy interactively.  In this mode, the policy values are
+written to the stderr device. 
+
+If both -P and -V are given, and -s is NOT given, then a comparison of the 
+two policies generated is done and output is written to stderr. For example:
+
+time java Corn_maze  -P -V  -g .99  city >/dev/null 
+
+	policy-value difference = 0.0000
+	policy and value iteration methods converged to same value
+	
+	real    0m10.22s
+	user    0m11.92s
+	sys     0m0.18s
+
+
+
+Iterations can be changed with -i on the command line.  To allow for all three
+types of experiments, the value given to -i is different for each:
+
+	for -Q, -i is a double:  iterations,rounds   where rounds is the number
+		of eperiments to conduct; iterations is the number of iterations for
+		each experiment.
+
+	for -P -i is a single iteration count
+
+	for -v i is a double:   p-iters,e-iters where p is policy iterations and
+		e is episode iterations.
